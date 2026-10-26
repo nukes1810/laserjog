@@ -8,6 +8,11 @@ Get the latest builds from the **Releases** page (or the Actions run artifacts):
 
 - `LightCut-Setup.exe`: Windows installer.
 - `LightCut-linux-x86_64.tar.gz`: Linux bundle. Extract it, then run `./LightCut/LightCut`.
+- `LightCut-macos-arm64.dmg`: macOS app for Apple Silicon Macs. Open the DMG and drag LightCut to Applications.
+
+### macOS first launch
+
+The app isn't signed by Apple yet, so macOS blocks it the first time. Right-click LightCut in Applications, choose **Open**, then click **Open** again. If it still refuses, run `xattr -cr /Applications/LightCut.app` in Terminal once.
 
 ## Linux system packages
 

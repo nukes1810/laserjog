@@ -53,8 +53,28 @@ jobs:
           name: LightCut-windows
           path: output/LightCut-Setup.exe
 
+  macos:
+    # Apple Silicon (arm64) build. Intel Macs from before 2020 can't run it.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build app
+        run: pyinstaller --noconfirm --windowed --name LightCut run_lightcut.py
+      - name: Package as DMG
+        run: |
+          hdiutil create -volname LightCut -srcfolder dist/LightCut.app -ov -format UDZO LightCut-macos-arm64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LightCut-macos
+          path: LightCut-macos-arm64.dmg
+
   release:
-    needs: [linux, windows]
+    needs: [linux, windows, macos]
     if: github.event_name == 'release'
     runs-on: ubuntu-22.04
     permissions:
