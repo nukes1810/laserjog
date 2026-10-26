@@ -140,22 +140,19 @@ class Canvas(QWidget):
     @staticmethod
     def _image_preview(s):
         if s.image.get("qimg") is None:
-            b = s.path.boundingRect()
             img = s.image
             if img.get("reference"):
                 # Reference photos show the picture itself; they are never engraved.
                 from PIL import ImageOps
                 src = img["src"]
-                if img["flip_h"]:
+                if img.get("flip_h"):
                     src = ImageOps.mirror(src)
-                if img["flip_v"]:
+                if img.get("flip_v"):
                     src = ImageOps.flip(src)
-                img["qimg"] = raster.to_qimage(src)
+                img["qimg"] = raster.pil_to_qimage(src)
             else:
-                burn = raster.burn_map(img["src"], b.width(), b.height(), img["interval"],
-                                       img["negative"], img["mode"], img["threshold"],
-                                       img["flip_h"], img["flip_v"])
-                img["qimg"] = raster.preview_qimage(burn)
+                b = s.path.boundingRect()
+                _, img["qimg"] = raster.process(img["src"], b.width(), b.height(), img)
         return s.image["qimg"]
 
     def paintEvent(self, _):

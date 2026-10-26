@@ -6,10 +6,11 @@ import json
 from PIL import Image
 from PySide6.QtGui import QPainterPath
 
+from . import raster
 from .document import Document, Layer, MachineSettings, Shape
 from .geometry import flatten, rect_path
 
-VERSION = 1
+VERSION = 2
 
 
 def save(path, doc, machine):
@@ -43,7 +44,7 @@ def load(path):
     for it in data["shapes"]:
         if it["kind"] == "image":
             src = Image.open(io.BytesIO(base64.b64decode(it["src_png"]))).convert("L")
-            settings = dict(it["image"])
+            settings = raster.fit_settings(it.get("image"))
             settings["src"] = src
             settings["qimg"] = None
             x, y, w, h = it["rect"]
@@ -57,5 +58,5 @@ def load(path):
                     p.lineTo(*q)
                 if len(pts) > 2 and pts[0] == pts[-1]:
                     p.closeSubpath()
-            doc.shapes.append(Shape(p, it["layer"], it["name"], False, "vector", None))
+            doc.shapes.append(Shape(p, it["layer"], it["name"], False, it.get("kind", "vector"), None))
     return doc, machine
