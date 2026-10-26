@@ -1,0 +1,68 @@
+name: Build LightCut
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  linux:
+    # Built on Ubuntu 22.04 (older glibc) so the binary runs on newer Debian and Arch.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: pyinstaller --noconfirm --windowed --name LightCut run_lightcut.py
+      - name: Report system libraries the bundle still needs
+        run: |
+          echo "Libraries not bundled (must be installed on the user's system):"
+          ldd dist/LightCut/LightCut | grep "not found" || echo "none missing on the build machine"
+      - name: Package
+        run: tar -czf LightCut-linux-x86_64.tar.gz -C dist LightCut
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LightCut-linux
+          path: LightCut-linux-x86_64.tar.gz
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build app
+        run: pyinstaller --noconfirm --windowed --name LightCut run_lightcut.py
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build installer
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LightCut-windows
+          path: output/LightCut-Setup.exe
+
+  release:
+    needs: [linux, windows]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/**/*
